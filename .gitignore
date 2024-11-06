@@ -53,3 +53,4 @@ Thumbs.db
 coverage/
 
 test-results/
+docker/pgdata/

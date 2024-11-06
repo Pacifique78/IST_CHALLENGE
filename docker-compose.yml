@@ -8,8 +8,10 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
+      # Store data in a subdirectory of the project instead of a volume
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
-      - ${POSTGRES_DATA:-postgres_data}:/var/lib/postgresql/data
+      - ./docker/pgdata:/var/lib/postgresql/data/pgdata
       - ./init-db:/docker-entrypoint-initdb.d:ro
     networks:
       - app-network
@@ -101,8 +103,8 @@ services:
       # SonarQube
       - SONAR_TOKEN=${SONAR_TOKEN}
       - SONAR_HOST_URL=${SONAR_HOST_URL}
-    tmpfs: 
-      - /app/test-results:exec
+    volumes:
+      - ./test-results:/app/test-results
     depends_on:
       db:
         condition: service_healthy

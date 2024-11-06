@@ -21,14 +21,12 @@ pipelines:
           caches:
             - docker
           script:
-            # Setup temporary directories
-            - mkdir -p /tmp/postgres_data /tmp/test-results
-            - chmod -R 777 /tmp/postgres_data /tmp/test-results
+            # Create necessary directories within the repository
+            - mkdir -p docker/pgdata test-results
+            - chmod -R 777 docker/pgdata test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
-            # Set environment variables
-            - export POSTGRES_DATA=/tmp/postgres_data
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
@@ -37,6 +35,7 @@ pipelines:
             - docker compose run --profile test test
             # Cleanup
             - docker compose down
+            - rm -rf docker/pgdata/*
       - step:
           name: SonarQube analysis
           image: maven:3.8.7-eclipse-temurin-11
@@ -62,14 +61,12 @@ pipelines:
           caches:
             - docker
           script:
-            # Setup temporary directories
-            - mkdir -p /tmp/postgres_data /tmp/test-results
-            - chmod -R 777 /tmp/postgres_data /tmp/test-results
+            # Create necessary directories within the repository
+            - mkdir -p docker/pgdata test-results
+            - chmod -R 777 docker/pgdata test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
-            # Set environment variables
-            - export POSTGRES_DATA=/tmp/postgres_data
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build

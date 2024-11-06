@@ -1,0 +1,11 @@
+Flask==2.0.1
+Werkzeug==2.0.3
+SQLAlchemy==1.4.47
+Flask-SQLAlchemy==2.5.1
+Flask-JWT-Extended==4.4.4
+Flask-Bcrypt==1.0.1
+psycopg2-binary==2.9.9
+python-dotenv==0.21.1
+pytest==7.3.1
+pytest-cov==4.0.0
+toml==0.10.2

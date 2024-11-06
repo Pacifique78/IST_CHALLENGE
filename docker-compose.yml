@@ -9,8 +9,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ${POSTGRES_DATA:-postgres_data}:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
     networks:
       - app-network
     healthcheck:
@@ -32,8 +32,6 @@ services:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
       - PORT=5002
-    volumes:
-      - ./python_app:/app
     depends_on:
       db:
         condition: service_healthy
@@ -55,9 +53,6 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=node_tododb
       - NODE_ENV=development
-    volumes:
-      - ./node_app:/app
-      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -104,12 +99,10 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=node_tododb_test
       # SonarQube
-      - SONAR_TOKEN=sqa_6ba2744c2294cff060979f64310a1d733789c4e1
-      - SONAR_HOST_URL=https://test.ist-challenge.i-skip.com/
-    volumes:
-      - ./:/app
-      - test-results:/app/test-results
-      - ~/.m2:/root/.m2  # Cache Maven dependencies
+      - SONAR_TOKEN=${SONAR_TOKEN}
+      - SONAR_HOST_URL=${SONAR_HOST_URL}
+    tmpfs: 
+      - /app/test-results:exec
     depends_on:
       db:
         condition: service_healthy
@@ -119,7 +112,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  postgres_data:
-  test-results:

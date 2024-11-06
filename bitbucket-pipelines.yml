@@ -9,6 +9,7 @@ definitions:
       memory: 2048
   caches:
     sonar: ~/.sonar
+    maven: ~/.m2
 
 pipelines:
   pull-requests:    
@@ -20,15 +21,22 @@ pipelines:
           caches:
             - docker
           script:
+            # Setup temporary directories
+            - mkdir -p /tmp/postgres_data /tmp/test-results
+            - chmod -R 777 /tmp/postgres_data /tmp/test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Set environment variables
+            - export POSTGRES_DATA=/tmp/postgres_data
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
             - docker compose up -d db
-            - sleep 10
-            - docker compose run test
+            - sleep 15  # Give more time for DB initialization
+            - docker compose run --profile test test
+            # Cleanup
+            - docker compose down
       - step:
           name: SonarQube analysis
           image: maven:3.8.7-eclipse-temurin-11
@@ -54,15 +62,20 @@ pipelines:
           caches:
             - docker
           script:
+            # Setup temporary directories
+            - mkdir -p /tmp/postgres_data /tmp/test-results
+            - chmod -R 777 /tmp/postgres_data /tmp/test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Set environment variables
+            - export POSTGRES_DATA=/tmp/postgres_data
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
             - docker compose up -d db
-            - sleep 10
-            - docker compose run test
+            - sleep 15
+            - docker compose run --profile test test
             
             - pipe: atlassian/ssh-run:0.4.1
               variables:
@@ -72,8 +85,6 @@ pipelines:
                 MODE: non-interactive
                 COMMAND: |
                   cd ${PROJECT_PATH}
-                  export DOCKER_BUILDKIT=0
-                  export COMPOSE_DOCKER_CLI_BUILD=0
                   git pull origin main
                   docker compose down
                   docker compose up -d --build

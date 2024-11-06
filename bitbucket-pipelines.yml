@@ -22,8 +22,7 @@ pipelines:
           script:
             # Modified installation commands
             - apk update
-            - apk add --no-cache py3-pip
-            - pip install docker-compose
+            - apk add --no-cache docker-compose py3-pip
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
@@ -56,8 +55,7 @@ pipelines:
           script:
             # Modified installation commands
             - apk update
-            - apk add --no-cache py3-pip
-            - pip install docker-compose
+            - apk add --no-cache docker-compose py3-pip
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db

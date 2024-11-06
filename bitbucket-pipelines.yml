@@ -12,7 +12,7 @@ definitions:
 
 pipelines:
   pull-requests:
-    main:
+    'main':
       - step:
           name: Build and Test
           services:

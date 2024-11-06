@@ -121,4 +121,5 @@ networks:
     driver: bridge
 
 volumes:
+  postgres_data:
   test-results:

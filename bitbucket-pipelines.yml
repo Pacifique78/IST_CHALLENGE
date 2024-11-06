@@ -35,7 +35,7 @@ pipelines:
             - sleep 10
             # Check DB logs
             - docker compose logs db
-            - sleep 100
+            - sleep 200
             # Run tests
             - docker compose run test || { docker compose logs db; exit 1; }
             # Cleanup

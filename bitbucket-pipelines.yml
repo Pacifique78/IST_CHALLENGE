@@ -21,21 +21,25 @@ pipelines:
           caches:
             - docker
           script:
-            # Create necessary directories
-            - mkdir -p docker/pgdata test-results
-            - chmod -R 777 docker/pgdata test-results
+            # Create test results directory
+            - mkdir -p test-results
+            - chmod -R 777 test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
+            # Start DB with logging
             - docker compose up -d db
-            - sleep 15  # Give more time for DB initialization
-            - docker compose run test  # Removed --profile flag
+            - sleep 10
+            # Check DB logs
+            - docker compose logs db
+            - sleep 10
+            # Run tests
+            - docker compose run test || { docker compose logs db; exit 1; }
             # Cleanup
             - docker compose down
-            - rm -rf docker/pgdata/*
       - step:
           name: SonarQube analysis
           image: maven:3.8.7-eclipse-temurin-11
@@ -61,18 +65,23 @@ pipelines:
           caches:
             - docker
           script:
-            # Create necessary directories
-            - mkdir -p docker/pgdata test-results
-            - chmod -R 777 docker/pgdata test-results
+            # Create test results directory
+            - mkdir -p test-results
+            - chmod -R 777 test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
+            # Start DB with logging
             - docker compose up -d db
-            - sleep 15
-            - docker compose run test  # Removed --profile flag
+            - sleep 5
+            # Check DB logs
+            - docker compose logs db
+            - sleep 10
+            # Run tests
+            - docker compose run test || { docker compose logs db; exit 1; }
             
             - pipe: atlassian/ssh-run:0.4.1
               variables:

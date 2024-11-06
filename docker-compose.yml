@@ -8,10 +8,10 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - ./docker/pgdata:/var/lib/postgresql/data/pgdata
-      - ./init-db:/docker-entrypoint-initdb.d:ro
+      # Remove PGDATA environment variable to use default location
+      - POSTGRES_DB=postgres
+    tmpfs:
+      - /var/lib/postgresql/data
     networks:
       - app-network
     healthcheck:
@@ -19,6 +19,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    command: ["postgres", "-c", "logging_collector=on", "-c", "log_statement=all"]
 
   python_api:
     build: 

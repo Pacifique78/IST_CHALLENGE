@@ -13,10 +13,6 @@ pipelines:
     main:  # Only PRs targeting main branch
       - step:
           name: Build and Test
-          services:
-            - docker
-          caches:
-            - docker
           script:
             # Install Docker
             - curl -fsSL https://get.docker.com -o get-docker.sh
@@ -42,8 +38,6 @@ pipelines:
     main:  # Automatically deploys when changes are merged to main
       - step:
           name: Build, Test and Deploy
-          services:
-            - docker
           script:
             # Build and test
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin

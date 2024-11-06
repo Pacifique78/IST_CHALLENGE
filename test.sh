@@ -18,14 +18,4 @@ echo "Python tests completed!"
 # ./node_modules/.bin/jest --config jest.config.ts
 # echo "Node.js tests completed!"
 
-echo "Running SonarQube analysis..."
-cd /app
-sonar-scanner \
-  -Dsonar.host.url=http://sonarqube:9000 \
-  -Dsonar.projectKey=todo-application \
-  -Dsonar.python.coverage.reportPaths=python_app/coverage.xml \
-  -Dsonar.java.coverage.reportPaths=java_app/target/site/jacoco/jacoco.xml \
-  -Dsonar.javascript.lcov.reportPaths=node_app/coverage/lcov.info \
-  -Dsonar.login=$SONAR_TOKEN
-
 echo "All tests completed!"

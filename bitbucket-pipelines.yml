@@ -1,4 +1,7 @@
-image: atlassian/default-image:latest  # Changed base image
+image: docker:24.0.7-dind  # Docker-in-Docker image
+
+options:
+  docker: true  # Enable Docker for the pipeline
 
 definitions:
   services:
@@ -14,19 +17,10 @@ pipelines:
           name: Build and Test PR
           services:
             - docker
+          caches:
+            - docker
           script:
-            # Add Docker's official GPG key
-            - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-            
-            # Add Docker repository
-            - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            
-            # Install Docker and Docker Compose
-            - apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-            
-            # Start Docker service
-            - service docker start
-            
+            - apk add --no-cache py-pip docker-compose
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
@@ -54,19 +48,10 @@ pipelines:
           name: Build, Test and Deploy
           services:
             - docker
+          caches:
+            - docker
           script:
-            # Add Docker's official GPG key
-            - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-            
-            # Add Docker repository
-            - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            
-            # Install Docker and Docker Compose
-            - apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-            
-            # Start Docker service
-            - service docker start
-            
+            - apk add --no-cache py-pip docker-compose
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db

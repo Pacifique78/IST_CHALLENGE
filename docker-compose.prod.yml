@@ -1,21 +1,77 @@
 version: '3.8'
 
 services:
-  node_api:
-    build:
-      dockerfile: Dockerfile.prod
-    environment:
-      - NODE_ENV=production
-    volumes:
-      - ./node_app:/app
-
-  python_api:
-    environment:
-      - FLASK_DEBUG=0
-    volumes:
-      - ./python_app:/app
-
   db:
+    image: postgres:14
     ports:
       - "3456:5432"
-    command: ["postgres"]  # Remove logging in production
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  python_api:
+    image: ${DOCKERHUB_USERNAME}/python-api:latest
+    ports:
+      - "5002:5002"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://postgres:password@db:5432/python_tododb
+      - JWT_SECRET_KEY=your_jwt_secret_key_change_in_production
+      - FLASK_APP=app.py
+      - PORT=5002
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  node_api:
+    image: ${DOCKERHUB_USERNAME}/node-api:latest
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=node_tododb
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    
+  java_api:
+    image: ${DOCKERHUB_USERNAME}/java-api:latest
+    ports:
+      - "5003:5003"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/java_tododb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

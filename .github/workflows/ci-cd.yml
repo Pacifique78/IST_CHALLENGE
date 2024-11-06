@@ -1,0 +1,113 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Test
+      run: |
+        docker compose build
+        docker compose up -d db
+        sleep 15
+        # Verify database initialization
+        docker compose exec -T db psql -U postgres -c "\l"
+        docker compose run test
+        docker compose down
+
+    - name: SonarQube Scan
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        docker run \
+          --rm \
+          -e SONAR_HOST_URL="https://test.ist-challenge.i-skip.com/" \
+          -e SONAR_TOKEN="${SONAR_TOKEN}" \
+          -v "${PWD}:/usr/src" \
+          sonarsource/sonar-scanner-cli:latest
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Python API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./python_app
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/python-api:latest
+
+    - name: Build and push Node API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./node_app
+        file: ./node_app/Dockerfile.dev
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/node-api:latest
+
+    - name: Build and push Java API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./java_app
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/java-api:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Copy docker-compose.prod.yml to remote server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SSH_USER }}
+        port: ${{ secrets.SSH_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "docker-compose.prod.yml"
+        target: "${{ secrets.PROJECT_PATH }}"
+
+    - name: Deploy to Production
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SSH_USER }}
+        port: ${{ secrets.SSH_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.PROJECT_PATH }}
+          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          docker compose -f docker-compose.prod.yml pull
+          docker compose -f docker-compose.prod.yml down
+          docker compose -f docker-compose.prod.yml up -d
+          docker image prune -f

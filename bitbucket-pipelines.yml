@@ -50,8 +50,21 @@ pipelines:
             - curl -Lo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
             - unzip sonar-scanner.zip
             - export PATH=$PATH:$PWD/sonar-scanner-4.7.0.2747-linux/bin
-            # Run SonarQube scan with proper command formatting
-            - sonar-scanner -D sonar.projectKey=ist-challenge -D sonar.sources=. -D sonar.host.url=${SONAR_URL} -D sonar.login=${SONAR_TOKEN}
+            # Debug environment variables
+            - echo "SONAR_URL is set to:"
+            - echo "${SONAR_URL}"
+            # Create sonar-project.properties
+            - |
+              echo "sonar.projectKey=ist-challenge
+              sonar.projectName=ist-challenge
+              sonar.projectVersion=1.0
+              sonar.sources=.
+              sonar.host.url=https://test.ist-challenge.i-skip.com/
+              sonar.login=${SONAR_TOKEN}
+              sonar.sourceEncoding=UTF-8" > sonar-project.properties
+            # Run SonarQube scan
+            - cat sonar-project.properties
+            - sonar-scanner
 
   branches:
     main:

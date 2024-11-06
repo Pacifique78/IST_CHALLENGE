@@ -1,4 +1,4 @@
-image: maven:3.3.9
+image: docker:20.10.16
 
 options:
   docker: true
@@ -7,20 +7,19 @@ definitions:
   services:
     docker:
       memory: 2048
+  caches:
+    sonar: ~/.sonar
 
 pipelines:
   pull-requests:
-    main:  # Only PRs targeting main branch
+    main:
       - step:
           name: Build and Test
+          services:
+            - docker
+          caches:
+            - docker
           script:
-            # Install Docker
-            - curl -fsSL https://get.docker.com -o get-docker.sh
-            - sh get-docker.sh
-
-            # Install Docker Compose
-            - curl -L "https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            - chmod +x /usr/local/bin/docker-compose
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
@@ -28,18 +27,31 @@ pipelines:
             - docker-compose run test
       - step:
           name: SonarQube analysis
+          image: maven:3.8.7-eclipse-temurin-11
           caches:
             - maven
             - sonar
           script:
-            - mvn verify sonar:sonar -Dsonar.projectKey=ist-challenge
+            # Install SonarScanner
+            - curl -Lo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$PWD/sonar-scanner-4.7.0.2747-linux/bin
+            # Run SonarQube analysis
+            - sonar-scanner \
+                -Dsonar.projectKey=ist-challenge \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=${SONAR_URL} \
+                -Dsonar.login=${SONAR_TOKEN}
 
   branches:
-    main:  # Automatically deploys when changes are merged to main
+    main:
       - step:
           name: Build, Test and Deploy
+          services:
+            - docker
+          caches:
+            - docker
           script:
-            # Build and test
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
@@ -52,8 +64,9 @@ pipelines:
                 SSH_USER: $SSH_USER
                 SERVER: $SERVER_IP
                 PORT: $SSH_PORT
+                MODE: non-interactive  # Add this for non-interactive mode
                 COMMAND: |
-                  cd /path/to/project
+                  cd ${PROJECT_PATH}  # Use variable instead of hardcoded path
                   git pull origin main
                   docker-compose down
                   docker-compose up -d --build

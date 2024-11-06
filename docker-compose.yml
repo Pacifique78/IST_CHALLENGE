@@ -63,6 +63,23 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    
+  java_api:
+    build: 
+      context: ./java_app
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/java_tododb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
 
   sonarqube:
     image: sonarqube:community
@@ -81,6 +98,11 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   test:
     profiles:
@@ -90,19 +112,32 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - NODE_ENV=test
+      - PYTHONUNBUFFERED=1
+      # Python test environment
+      - DATABASE_URL=postgresql://postgres:password@db:5432/python_tododb_test
+      # Java test environment
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/java_tododb_test
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      # Node test environment
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=testdb
+      - POSTGRES_DB=node_tododb_test
+      # SonarQube
       - SONAR_TOKEN=${SONAR_TOKEN}
       - SONAR_HOST_URL=http://sonarqube:9000
     volumes:
       - ./:/app
       - test-results:/app/test-results
+      - ~/.m2:/root/.m2  # Cache Maven dependencies
     depends_on:
-      - db
-      - sonarqube
+      db:
+        condition: service_healthy
+      sonarqube:
+        condition: service_healthy
     networks:
       - app-network
 

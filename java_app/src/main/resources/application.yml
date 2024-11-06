@@ -1,0 +1,48 @@
+server:
+  port: 5003
+
+spring:
+  profiles:
+    active: dev  # Change to 'prod' in production
+  application:
+    name: todo-api
+  datasource:
+    url: jdbc:postgresql://db:5432/java_tododb
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+jwt:
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  expiration: 3600000 # 1 hour in milliseconds
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate: INFO
+    com.todo: DEBUG
+    
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    com.todo: INFO

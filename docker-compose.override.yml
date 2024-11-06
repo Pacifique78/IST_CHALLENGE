@@ -1,13 +1,22 @@
 version: '3.8'
 
 services:
-  node_app:
+  node_api:
     build:
       dockerfile: Dockerfile.dev
+    command: ["/start.sh"]
     environment:
       - NODE_ENV=development
     volumes:
       - ./node_app:/app
       - /app/node_modules
-    depends_on:
-      - db
+
+  python_api:
+    environment:
+      - FLASK_DEBUG=1
+    volumes:
+      - ./python_app:/app
+
+  db:
+    ports:
+      - "3456:5432"

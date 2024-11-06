@@ -1,0 +1,72 @@
+FROM node:16-slim
+
+WORKDIR /app
+
+# Install system dependencies including build essentials
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    curl \
+    wget \
+    gnupg \
+    unzip \
+    default-jre \
+    postgresql-client \
+    libpq-dev \
+    gcc \
+    g++ \
+    make \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip first
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install wait-for script
+ADD https://github.com/eficode/wait-for/raw/master/wait-for /wait-for
+RUN chmod +x /wait-for
+
+# Install SonarScanner
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip \
+    && unzip sonar-scanner-cli-4.7.0.2747-linux.zip \
+    && mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner \
+    && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner \
+    && rm sonar-scanner-cli-4.7.0.2747-linux.zip
+
+# Handle Node.js dependencies first
+WORKDIR /app/node_app
+COPY node_app/package*.json ./
+COPY node_app/jest.config.ts ./
+RUN npm ci
+RUN rm -rf node_modules/bcrypt
+RUN npm install bcrypt --build-from-source
+
+# Now handle Python dependencies
+WORKDIR /app/python_app
+COPY python_app/requirements.txt .
+# Install each package separately to avoid bcrypt issues
+RUN pip3 install --no-cache-dir Flask==2.0.1 \
+    && pip3 install --no-cache-dir Werkzeug==2.0.3 \
+    && pip3 install --no-cache-dir SQLAlchemy==1.4.47 \
+    && pip3 install --no-cache-dir Flask-SQLAlchemy==2.5.1 \
+    && pip3 install --no-cache-dir Flask-JWT-Extended==4.4.4 \
+    && pip3 install --no-cache-dir Flask-Bcrypt==1.0.1 \
+    && pip3 install --no-cache-dir psycopg2-binary==2.9.9 \
+    && pip3 install --no-cache-dir python-dotenv==0.21.1 \
+    && pip3 install --no-cache-dir pytest==7.3.1 \
+    && pip3 install --no-cache-dir pytest-cov==4.0.0 \
+    && pip3 install --no-cache-dir toml==0.10.2
+
+# Copy all application files
+COPY . /app/
+
+# Set up test script
+COPY test.sh /app/
+RUN chmod +x /app/test.sh
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/opt/sonar-scanner/bin:${PATH}"
+
+CMD ["/app/test.sh"]

@@ -1,13 +1,21 @@
 version: '3.8'
 
 services:
-  node_app:
+  node_api:
     build:
       dockerfile: Dockerfile.prod
     environment:
       - NODE_ENV=production
-    env_file:
-      - ../.env.prod
-    command: npm run start
-    depends_on:
-      - db
+    volumes:
+      - ./node_app:/app
+
+  python_api:
+    environment:
+      - FLASK_DEBUG=0
+    volumes:
+      - ./python_app:/app
+
+  db:
+    ports:
+      - "3456:5432"
+    command: ["postgres"]  # Remove logging in production

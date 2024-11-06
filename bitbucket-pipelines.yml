@@ -20,7 +20,10 @@ pipelines:
           caches:
             - docker
           script:
-            # Using Docker Compose V2 commands
+            # Disable BuildKit
+            - export DOCKER_BUILDKIT=0
+            - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
             - docker compose up -d db
@@ -51,7 +54,10 @@ pipelines:
           caches:
             - docker
           script:
-            # Using Docker Compose V2 commands
+            # Disable BuildKit
+            - export DOCKER_BUILDKIT=0
+            - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
             - docker compose up -d db
@@ -66,6 +72,8 @@ pipelines:
                 MODE: non-interactive
                 COMMAND: |
                   cd ${PROJECT_PATH}
+                  export DOCKER_BUILDKIT=0
+                  export COMPOSE_DOCKER_CLI_BUILD=0
                   git pull origin main
                   docker compose down
                   docker compose up -d --build

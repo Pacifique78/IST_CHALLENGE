@@ -1,0 +1,30 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.project.sourcePaths": ["src/main/java"],
+    "java.project.outputPath": "target/classes",
+    "java.project.referencedLibraries": [
+      "lib/**/*.jar",
+      "target/dependency/*.jar"
+    ],
+    "java.dependency.packagePresentation": "hierarchical",
+    "java.dependency.syncWithFolderExplorer": true,
+    "java.project.explorer.showNonJavaResources": true,
+    "files.exclude": {
+      "**/.classpath": true,
+      "**/.project": true,
+      "**/.settings": true,
+      "**/.factorypath": true
+    },
+    "java.dependency.showMembers": true,
+    "java.completion.enabled": true,
+    "java.format.enabled": true,
+    "java.jdt.ls.java.home": "",  // Leave empty to use VS Code's built-in JDK
+    "java.configuration.maven.userSettings": "",  // Path to your settings.xml if needed
+    "[java]": {
+      "editor.suggest.snippetsPreventQuickSuggestions": false,
+      "editor.suggestSelection": "first",
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true
+    }
+  }

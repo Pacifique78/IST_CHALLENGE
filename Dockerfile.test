@@ -1,14 +1,17 @@
-FROM node:16-slim
+FROM maven:3.8.4-openjdk-11-slim
 
 WORKDIR /app
 
-# Install system dependencies including build essentials
+# Install Node.js
 RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y \
+    nodejs \
     python3 \
     python3-pip \
-    curl \
     wget \
-    gnupg \
     unzip \
     default-jre \
     postgresql-client \
@@ -19,12 +22,8 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip first
+# Upgrade pip
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Install wait-for script
-ADD https://github.com/eficode/wait-for/raw/master/wait-for /wait-for
-RUN chmod +x /wait-for
 
 # Install SonarScanner
 RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip \
@@ -33,36 +32,36 @@ RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-s
     && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner \
     && rm sonar-scanner-cli-4.7.0.2747-linux.zip
 
-# Handle Node.js dependencies first
-WORKDIR /app/node_app
-COPY node_app/package*.json ./
-COPY node_app/jest.config.ts ./
-RUN npm ci
-RUN rm -rf node_modules/bcrypt
-RUN npm install bcrypt --build-from-source
+# Install wait-for script
+ADD https://github.com/eficode/wait-for/raw/master/wait-for /wait-for
+RUN chmod +x /wait-for
 
-# Now handle Python dependencies
-WORKDIR /app/python_app
-COPY python_app/requirements.txt .
-# Install each package separately to avoid bcrypt issues
-RUN pip3 install --no-cache-dir Flask==2.0.1 \
-    && pip3 install --no-cache-dir Werkzeug==2.0.3 \
-    && pip3 install --no-cache-dir SQLAlchemy==1.4.47 \
-    && pip3 install --no-cache-dir Flask-SQLAlchemy==2.5.1 \
-    && pip3 install --no-cache-dir Flask-JWT-Extended==4.4.4 \
-    && pip3 install --no-cache-dir Flask-Bcrypt==1.0.1 \
-    && pip3 install --no-cache-dir psycopg2-binary==2.9.9 \
-    && pip3 install --no-cache-dir python-dotenv==0.21.1 \
-    && pip3 install --no-cache-dir pytest==7.3.1 \
-    && pip3 install --no-cache-dir pytest-cov==4.0.0 \
-    && pip3 install --no-cache-dir toml==0.10.2
+# Copy test script and set permissions
+COPY test.sh /app/
+RUN chmod +x /app/test.sh
+
+# Install Python dependencies
+COPY python_app/requirements.txt /app/python_app/
+RUN cd /app/python_app && pip3 install --no-cache-dir -r requirements.txt
+
+# # Install Node.js dependencies
+# WORKDIR /app/node_app
+# COPY node_app/package*.json ./
+# COPY node_app/jest.config.ts ./
+# RUN npm ci
+# RUN rm -rf node_modules/bcrypt
+# RUN npm install bcrypt --build-from-source
+
+# # Copy Maven wrapper files and pom.xml
+# COPY java_app/.mvn /app/java_app/.mvn
+# COPY java_app/mvnw /app/java_app/mvnw
+# COPY java_app/mvnw.cmd /app/java_app/mvnw.cmd
+# COPY java_app/pom.xml /app/java_app/
+# RUN chmod +x /app/java_app/mvnw
+# RUN cd /app/java_app && mvn dependency:go-offline
 
 # Copy all application files
 COPY . /app/
-
-# Set up test script
-COPY test.sh /app/
-RUN chmod +x /app/test.sh
 
 WORKDIR /app
 

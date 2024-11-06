@@ -21,21 +21,17 @@ pipelines:
           caches:
             - docker
           script:
-            # Create test results directory
-            - mkdir -p test-results
-            - chmod -R 777 test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
-            # Start DB with logging
+            # Start DB and wait for it to be ready
             - docker compose up -d db
-            - sleep 10
-            # Check DB logs
-            - docker compose logs db
-            - sleep 200
+            - sleep 20
+            # Verify database initialization
+            - docker compose exec db psql -U postgres -c "\l"
             # Run tests
             - docker compose run test || { docker compose logs db; exit 1; }
             # Cleanup
@@ -65,21 +61,17 @@ pipelines:
           caches:
             - docker
           script:
-            # Create test results directory
-            - mkdir -p test-results
-            - chmod -R 777 test-results
             # Disable BuildKit
             - export DOCKER_BUILDKIT=0
             - export COMPOSE_DOCKER_CLI_BUILD=0
             # Docker commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker compose build
-            # Start DB with logging
+            # Start DB and wait for it to be ready
             - docker compose up -d db
-            - sleep 10
-            # Check DB logs
-            - docker compose logs db
-            - sleep 100
+            - sleep 15
+            # Verify database initialization
+            - docker compose exec db psql -U postgres -c "\l"
             # Run tests
             - docker compose run test || { docker compose logs db; exit 1; }
             

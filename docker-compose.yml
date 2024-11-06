@@ -8,8 +8,8 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      # Remove PGDATA environment variable to use default location
-      - POSTGRES_DB=postgres
+    volumes:
+      - ./init-db:/docker-entrypoint-initdb.d:ro
     tmpfs:
       - /var/lib/postgresql/data
     networks:
@@ -101,8 +101,8 @@ services:
       # SonarQube
       - SONAR_TOKEN=${SONAR_TOKEN}
       - SONAR_HOST_URL=${SONAR_HOST_URL}
-    volumes:
-      - ./test-results:/app/test-results
+    tmpfs:
+      - /app/test-results
     depends_on:
       db:
         condition: service_healthy

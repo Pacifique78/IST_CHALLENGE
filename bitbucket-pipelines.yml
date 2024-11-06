@@ -1,4 +1,4 @@
-image: docker:20.10.16
+image: atlassian/default-image:latest
 
 options:
   docker: true
@@ -23,6 +23,13 @@ pipelines:
             - docker-compose up -d db
             - sleep 10  # Give database time to start
             - docker-compose run test
+      - step:
+          name: SonarQube analysis
+          caches:
+            - maven
+            - sonar
+          script:
+            - mvn verify sonar:sonar -Dsonar.projectKey=ist-challenge
 
   branches:
     main:  # Automatically deploys when changes are merged to main

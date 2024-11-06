@@ -81,29 +81,6 @@ services:
     networks:
       - app-network
 
-  sonarqube:
-    image: sonarqube:community
-    ports:
-      - "9000:9000"
-    environment:
-      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
-      - SONAR_JDBC_USERNAME=postgres
-      - SONAR_JDBC_PASSWORD=password
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   test:
     profiles:
       - test
@@ -127,16 +104,14 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=node_tododb_test
       # SonarQube
-      - SONAR_TOKEN=${SONAR_TOKEN}
-      - SONAR_HOST_URL=http://sonarqube:9000
+      - SONAR_TOKEN=sqa_6ba2744c2294cff060979f64310a1d733789c4e1
+      - SONAR_HOST_URL=https://test.ist-challenge.i-skip.com/
     volumes:
       - ./:/app
       - test-results:/app/test-results
       - ~/.m2:/root/.m2  # Cache Maven dependencies
     depends_on:
       db:
-        condition: service_healthy
-      sonarqube:
         condition: service_healthy
     networks:
       - app-network
@@ -146,8 +121,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_logs:
   test-results:

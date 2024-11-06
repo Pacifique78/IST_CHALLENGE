@@ -8,7 +8,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      # Store data in a subdirectory of the project instead of a volume
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ./docker/pgdata:/var/lib/postgresql/data/pgdata
@@ -79,8 +78,6 @@ services:
       - app-network
 
   test:
-    profiles:
-      - test
     build:
       context: .
       dockerfile: Dockerfile.test

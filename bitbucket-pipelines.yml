@@ -20,14 +20,12 @@ pipelines:
           caches:
             - docker
           script:
-            # Modified installation commands
-            - apk update
-            - apk add --no-cache docker-compose py3-pip
+            # Using Docker Compose V2 commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
-            - docker-compose build
-            - docker-compose up -d db
+            - docker compose build
+            - docker compose up -d db
             - sleep 10
-            - docker-compose run test
+            - docker compose run test
       - step:
           name: SonarQube analysis
           image: maven:3.8.7-eclipse-temurin-11
@@ -53,14 +51,12 @@ pipelines:
           caches:
             - docker
           script:
-            # Modified installation commands
-            - apk update
-            - apk add --no-cache docker-compose py3-pip
+            # Using Docker Compose V2 commands
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
-            - docker-compose build
-            - docker-compose up -d db
+            - docker compose build
+            - docker compose up -d db
             - sleep 10
-            - docker-compose run test
+            - docker compose run test
             
             - pipe: atlassian/ssh-run:0.4.1
               variables:
@@ -71,6 +67,6 @@ pipelines:
                 COMMAND: |
                   cd ${PROJECT_PATH}
                   git pull origin main
-                  docker-compose down
-                  docker-compose up -d --build
+                  docker compose down
+                  docker compose up -d --build
                   docker image prune -f

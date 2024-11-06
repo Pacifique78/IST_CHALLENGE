@@ -1,0 +1,52 @@
+image: docker:20.10.16
+
+options:
+  docker: true
+
+definitions:
+  services:
+    docker:
+      memory: 2048
+
+pipelines:
+  pull-requests:
+    main:  # Only PRs targeting main branch
+      - step:
+          name: Build and Test
+          services:
+            - docker
+          caches:
+            - docker
+          script:
+            - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            - docker-compose build
+            - docker-compose up -d db
+            - sleep 10  # Give database time to start
+            - docker-compose run test
+
+  branches:
+    main:  # Automatically deploys when changes are merged to main
+      - step:
+          name: Build, Test and Deploy
+          services:
+            - docker
+          script:
+            # Build and test
+            - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            - docker-compose build
+            - docker-compose up -d db
+            - sleep 10
+            - docker-compose run test
+            
+            # Deploy automatically if tests pass
+            - pipe: atlassian/ssh-run:0.4.1
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SERVER_IP
+                PORT: $SSH_PORT
+                COMMAND: |
+                  cd /path/to/project
+                  git pull origin main
+                  docker-compose down
+                  docker-compose up -d --build
+                  docker image prune -f  # Clean up unused images

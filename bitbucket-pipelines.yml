@@ -1,7 +1,4 @@
-image: docker:20.10.16
-
-options:
-  docker: true
+image: atlassian/default-image:latest  # Changed base image
 
 definitions:
   services:
@@ -11,19 +8,29 @@ definitions:
     sonar: ~/.sonar
 
 pipelines:
-  pull-requests:
-    'main':
+  pull-requests:    
+    '**':
       - step:
-          name: Build and Test
+          name: Build and Test PR
           services:
             - docker
-          caches:
-            - docker
           script:
+            # Add Docker's official GPG key
+            - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+            
+            # Add Docker repository
+            - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            
+            # Install Docker and Docker Compose
+            - apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            
+            # Start Docker service
+            - service docker start
+            
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
-            - sleep 10  # Give database time to start
+            - sleep 10
             - docker-compose run test
       - step:
           name: SonarQube analysis
@@ -32,11 +39,9 @@ pipelines:
             - maven
             - sonar
           script:
-            # Install SonarScanner
             - curl -Lo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
             - unzip sonar-scanner.zip
             - export PATH=$PATH:$PWD/sonar-scanner-4.7.0.2747-linux/bin
-            # Run SonarQube analysis
             - sonar-scanner \
                 -Dsonar.projectKey=ist-challenge \
                 -Dsonar.sources=. \
@@ -49,25 +54,34 @@ pipelines:
           name: Build, Test and Deploy
           services:
             - docker
-          caches:
-            - docker
           script:
+            # Add Docker's official GPG key
+            - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+            
+            # Add Docker repository
+            - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            
+            # Install Docker and Docker Compose
+            - apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            
+            # Start Docker service
+            - service docker start
+            
             - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
             - docker-compose build
             - docker-compose up -d db
             - sleep 10
             - docker-compose run test
             
-            # Deploy automatically if tests pass
             - pipe: atlassian/ssh-run:0.4.1
               variables:
                 SSH_USER: $SSH_USER
                 SERVER: $SERVER_IP
                 PORT: $SSH_PORT
-                MODE: non-interactive  # Add this for non-interactive mode
+                MODE: non-interactive
                 COMMAND: |
-                  cd ${PROJECT_PATH}  # Use variable instead of hardcoded path
+                  cd ${PROJECT_PATH}
                   git pull origin main
                   docker-compose down
                   docker-compose up -d --build
-                  docker image prune -f  # Clean up unused images
+                  docker image prune -f

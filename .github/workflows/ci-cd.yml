@@ -12,6 +12,7 @@ env:
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
   SSH_HOST: ${{ secrets.SSH_HOST }}
   SSH_USER: ${{ secrets.SSH_USER }}
+  PROJECT_PATH: ${{ secrets.PROJECT_PATH }} 
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   # Database configuration
@@ -138,7 +139,7 @@ jobs:
         username: ${{ env.SSH_USER }}
         key: ${{ env.SSH_PRIVATE_KEY }}
         source: "docker-compose.prod.yml,init-db/"
-        target: "/opt/todo-app"
+        target: "${{ env.PROJECT_PATH }}"
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@master
@@ -147,7 +148,7 @@ jobs:
         username: ${{ env.SSH_USER }}
         key: ${{ env.SSH_PRIVATE_KEY }}
         script: |
-          cd /opt/todo-app
+          cd ${{ env.PROJECT_PATH }}
           echo "DOCKERHUB_USERNAME=${{ env.DOCKERHUB_USERNAME }}" > .env
           docker-compose -f docker-compose.prod.yml pull
           docker-compose -f docker-compose.prod.yml up -d

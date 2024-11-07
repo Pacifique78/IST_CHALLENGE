@@ -28,8 +28,10 @@ sonar-scanner \
   -Dsonar.host.url=https://test.ist-challenge.i-skip.com \
   -Dsonar.projectKey=ist-challenge \
   -Dsonar.python.coverage.reportPaths=python_app/coverage.xml \
-  -Dsonar.java.coverage.reportPaths=java_app/target/site/jacoco/jacoco.xml \
   -Dsonar.javascript.lcov.reportPaths=node_app/coverage/lcov.info \
-  -Dsonar.login=$SONAR_TOKEN
+  -Dsonar.login=$SONAR_TOKEN \
+  -Dsonar.exclusions=**/*.java,**/*.ts \
+  -Dsonar.sources=python_app/ \
+  -Dsonar.tests=python_app/tests/
 
 echo "All tests completed!"

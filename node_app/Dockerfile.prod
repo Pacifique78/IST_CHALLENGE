@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . .
 
+COPY scripts/start.sh /start.sh
+RUN chmod +x /start.sh
+
 RUN npm run build
 EXPOSE 5001
 CMD ["npm", "start"]

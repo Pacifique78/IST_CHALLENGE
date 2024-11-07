@@ -14,6 +14,9 @@ env:
   SSH_USER: ${{ secrets.SSH_USER }}
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  # Database configuration
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
 jobs:
   test:
@@ -23,8 +26,8 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -36,21 +39,40 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Install Docker Compose
+    - name: Install Docker Compose
+      run: |
+        DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+        mkdir -p $DOCKER_CONFIG/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+        chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - name: Initialize Databases
+      env:
+        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        PGUSER: ${{ env.POSTGRES_USER }}
       run: |
         # Wait for PostgreSQL to be ready
         sleep 5
         
         # Run init.sql to create and initialize all databases
-        PGPASSWORD=password psql -h localhost -U postgres -f init-db/init.sql
+        psql -h localhost -f init-db/init.sql
 
     - name: Run Tests
       run: |
-        docker-compose -f docker-compose.yml build test
-        docker-compose -f docker-compose.yml run --rm \
+        docker compose -f docker-compose.yml build test
+        docker compose -f docker-compose.yml run --rm \
           -e POSTGRES_HOST=postgres \
-          -e DATABASE_URL=postgresql://postgres:password@postgres:5432/python_tododb_test \
+          -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
+          -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+          -e DATABASE_URL=postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@postgres:5432/python_tododb_test \
           -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/java_tododb_test \
+          -e SPRING_DATASOURCE_USERNAME=${{ env.POSTGRES_USER }} \
+          -e SPRING_DATASOURCE_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
           -e POSTGRES_DB=node_tododb_test \
           test
 

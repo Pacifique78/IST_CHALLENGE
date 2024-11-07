@@ -11,23 +11,29 @@ export const TestDataSource = new DataSource({
   username: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'password',
   database: process.env.POSTGRES_DB || 'node_tododb_test',
-  synchronize: true,
+  synchronize: false,
   dropSchema: true,
   entities: [User, Todo],
   migrations: [path.join(__dirname, '../migrations/*.{ts,js}')]
 });
 
 beforeAll(async () => {
+  // Initialize the connection
   await TestDataSource.initialize();
+  
+  // Drop all tables to ensure clean state
+  await TestDataSource.dropDatabase();
+  
+  // Run migrations
+  await TestDataSource.runMigrations({ transaction: 'all' });
 });
 
 beforeEach(async () => {
-  // Clear all tables before each test
+  // Clear data from all tables between tests
   const entities = TestDataSource.entityMetadatas;
-  for (const entity of entities) {
-    const repository = TestDataSource.getRepository(entity.name);
-    await repository.clear();
-  }
+  const tableNames = entities.map(entity => `"${entity.tableName}"`).join(', ');
+  
+  await TestDataSource.query(`TRUNCATE TABLE ${tableNames} CASCADE;`);
 });
 
 afterAll(async () => {

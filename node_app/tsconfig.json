@@ -30,5 +30,5 @@
     }
   },
   "exclude": ["node_modules"],
-  "include": ["./src/**/*.ts", "./src/**/*.d.ts", "./src/**/__tests__/*.ts"]
+  "include": ["./src/**/*.ts", "./src/**/*.d.ts", "./src/**/__tests__/*.ts", "src/__tests__/customSequencer.js"]
 }

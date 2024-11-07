@@ -1,5 +1,8 @@
 FROM node:22.11.0-alpine AS base
 
+ADD https://github.com/eficode/wait-for/raw/master/wait-for /wait-for
+RUN chmod +x /wait-for
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -8,9 +11,11 @@ RUN npm install
 
 COPY . .
 
-COPY scripts/start.sh /start.sh
+RUN npm run build
+
+COPY scripts/start-prod.sh /start.sh
 RUN chmod +x /start.sh
 
-RUN npm run build
 EXPOSE 5001
-CMD ["npm", "start"]
+
+CMD ["/start.sh"]

@@ -6,151 +6,116 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-
-    - name: Build Java project
+    - name: Initialize Databases
       run: |
-        cd java_app
-        ./mvnw clean package -DskipTests
-        cd ..
+        # Wait for PostgreSQL to be ready
+        sleep 5
+        
+        # Run init.sql to create and initialize all databases
+        PGPASSWORD=password psql -h localhost -U postgres -f init-db/init.sql
 
-    - name: Get Maven dependencies path
-      id: get-maven-path
+    - name: Run Tests
       run: |
-        echo "MAVEN_PATH=$(cd java_app && ./mvnw help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)" >> $GITHUB_ENV
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Build and Test
-      run: |
-        docker compose build
-        docker compose up -d db
-        sleep 15
-        docker compose exec -T db psql -U postgres -c "\l"
-        docker compose run test
-        docker compose down
-
-    - name: Create sonar-project.properties
-      run: |
-        echo "sonar.projectKey=ist-challenge
-        sonar.projectName=ist-challenge
-        sonar.projectVersion=1.0
-        sonar.sources=.
-        sonar.java.source=17
-        sonar.java.binaries=java_app/target/classes
-        sonar.java.test.binaries=java_app/target/test-classes
-        sonar.java.libraries=${{ env.MAVEN_PATH }}/**/*.jar
-        sonar.coverage.exclusions=**/*.java
-        sonar.exclusions=**/target/**,**/node_modules/**,**/.git/**,**/.github/**
-        sonar.host.url=https://test.ist-challenge.i-skip.com
-        sonar.login=${{ secrets.SONAR_TOKEN }}
-        sonar.sourceEncoding=UTF-8
-        sonar.java.source.folder=java_app/src/main/java
-        sonar.java.test.folder=java_app/src/test/java" > sonar-project.properties
-
-    - name: Debug SonarQube config
-      run: |
-        echo "Content of sonar-project.properties:"
-        cat sonar-project.properties
-        echo "Maven repository location:"
-        echo ${{ env.MAVEN_PATH }}
-        echo "Java binaries location:"
-        ls -la java_app/target/classes
-        echo "Maven dependencies:"
-        ls -la ${{ env.MAVEN_PATH }}
-
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: "https://test.ist-challenge.i-skip.com"
+        docker-compose -f docker-compose.yml build test
+        docker-compose -f docker-compose.yml run --rm \
+          -e POSTGRES_HOST=postgres \
+          -e DATABASE_URL=postgresql://postgres:password@postgres:5432/python_tododb_test \
+          -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/java_tododb_test \
+          -e POSTGRES_DB=node_tododb_test \
+          test
 
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
 
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ env.DOCKERHUB_USERNAME }}
+        password: ${{ env.DOCKER_PASSWORD }}
 
     - name: Build and push Python API
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v4
       with:
         context: ./python_app
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/python-api:latest
+        tags: ${{ env.DOCKERHUB_USERNAME }}/python-api:latest
 
     - name: Build and push Node API
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v4
       with:
         context: ./node_app
-        file: ./node_app/Dockerfile.dev
+        file: ./node_app/Dockerfile.prod
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/node-api:latest
+        tags: ${{ env.DOCKERHUB_USERNAME }}/node-api:latest
 
     - name: Build and push Java API
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v4
       with:
         context: ./java_app
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/java-api:latest
+        tags: ${{ env.DOCKERHUB_USERNAME }}/java-api:latest
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
     - uses: actions/checkout@v3
-      
-    - name: Copy docker-compose.prod.yml to remote server
+
+    - name: Copy docker-compose and init files to VPS
       uses: appleboy/scp-action@master
       with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SSH_USER }}
-        port: ${{ secrets.SSH_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "docker-compose.prod.yml"
-        target: "${{ secrets.PROJECT_PATH }}"
+        host: ${{ env.SSH_HOST }}
+        username: ${{ env.SSH_USER }}
+        key: ${{ env.SSH_PRIVATE_KEY }}
+        source: "docker-compose.prod.yml,init-db/"
+        target: "/opt/todo-app"
 
-    - name: Deploy to Production
+    - name: Deploy to VPS
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SSH_USER }}
-        port: ${{ secrets.SSH_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        host: ${{ env.SSH_HOST }}
+        username: ${{ env.SSH_USER }}
+        key: ${{ env.SSH_PRIVATE_KEY }}
         script: |
-          cd ${{ secrets.PROJECT_PATH }}
-          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-          docker compose -f docker-compose.prod.yml pull
-          docker compose -f docker-compose.prod.yml down
-          docker compose -f docker-compose.prod.yml up -d
-          docker image prune -f
+          cd /opt/todo-app
+          echo "DOCKERHUB_USERNAME=${{ env.DOCKERHUB_USERNAME }}" > .env
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d
+          docker system prune -f

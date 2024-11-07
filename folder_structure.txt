@@ -1,0 +1,150 @@
+.
+├── .DS_Store
+├── .env
+├── .env.prod
+├── .gitignore
+├── .vscode
+│   └── settings.json
+├── Dockerfile.test
+├── README.md
+├── docker-compose.override.yml
+├── docker-compose.prod.yml
+├── docker-compose.yml
+├── folder_structure.txt
+├── init-db
+│   └── init.sql
+├── java_app
+│   ├── .DS_Store
+│   ├── .classpath
+│   ├── .mvn
+│   │   └── wrapper
+│   │       └── maven-wrapper.properties
+│   ├── .project
+│   ├── .vscode
+│   │   └── settings.json
+│   ├── Dockerfile
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   ├── pom.xml
+│   ├── src
+│   │   ├── .DS_Store
+│   │   ├── main
+│   │   │   ├── java
+│   │   │   │   └── com
+│   │   │   │       └── todo
+│   │   │   │           ├── TodoApplication.java
+│   │   │   │           ├── config
+│   │   │   │           │   ├── SecurityConfig.java
+│   │   │   │           │   └── WebConfig.java
+│   │   │   │           ├── controller
+│   │   │   │           │   ├── AuthController.java
+│   │   │   │           │   └── TodoController.java
+│   │   │   │           ├── dto
+│   │   │   │           │   ├── LoginRequest.java
+│   │   │   │           │   ├── SignupRequest.java
+│   │   │   │           │   ├── TodoRequest.java
+│   │   │   │           │   └── TodoResponse.java
+│   │   │   │           ├── exception
+│   │   │   │           │   ├── ApiException.java
+│   │   │   │           │   ├── ConflictException.java
+│   │   │   │           │   ├── ErrorResponse.java
+│   │   │   │           │   ├── GlobalExceptionHandler.java
+│   │   │   │           │   ├── NotFoundException.java
+│   │   │   │           │   └── UnauthorizedException.java
+│   │   │   │           ├── model
+│   │   │   │           │   ├── Todo.java
+│   │   │   │           │   └── User.java
+│   │   │   │           ├── repository
+│   │   │   │           │   ├── TodoRepository.java
+│   │   │   │           │   └── UserRepository.java
+│   │   │   │           ├── security
+│   │   │   │           │   └── JwtAuthenticationFilter.java
+│   │   │   │           └── service
+│   │   │   │               ├── JwtService.java
+│   │   │   │               ├── TodoService.java
+│   │   │   │               └── UserService.java
+│   │   │   └── resources
+│   │   │       └── application.yml
+│   │   └── test
+│   │       ├── java
+│   │       │   └── com
+│   │       │       └── todo
+│   │       │           ├── BaseIntegrationTest.java
+│   │       │           ├── config
+│   │       │           │   ├── TestConfig.java
+│   │       │           │   └── TestSecurityConfig.java
+│   │       │           ├── controller
+│   │       │           │   ├── AuthControllerTest.java
+│   │       │           │   └── TodoControllerTest.java
+│   │       │           └── service
+│   │       │               ├── TodoServiceTest.java
+│   │       │               └── UserServiceTest.java
+│   │       └── resources
+│   │           └── application-test.yml
+├── node_app
+│   ├── . prettierc
+│   ├── .DS_Store
+│   ├── .dockerignore
+│   ├── .env
+│   ├── .prettierrc
+│   ├── Dockerfile.dev
+│   ├── Dockerfile.prod
+│   ├── eslint.config.js
+│   ├── jest.config.ts
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── scripts
+│   │   └── start.sh
+│   ├── src
+│   │   ├── .DS_Store
+│   │   ├── __tests__
+│   │   │   ├── auth.test.ts
+│   │   │   ├── setup.ts
+│   │   │   └── todos.test.ts
+│   │   ├── app.ts
+│   │   ├── config
+│   │   │   └── database.ts
+│   │   ├── controllers
+│   │   │   ├── todoController.ts
+│   │   │   └── userController.ts
+│   │   ├── entities
+│   │   │   ├── Todo.ts
+│   │   │   └── User.ts
+│   │   ├── middlewares
+│   │   │   ├── authHandler.ts
+│   │   │   └── errorHandler.ts
+│   │   ├── migrations
+│   │   │   ├── todoTableMingrations.ts
+│   │   │   └── userTableMigrations.ts
+│   │   ├── repositories
+│   │   │   ├── TodoRepository.ts
+│   │   │   └── UserRepository.ts
+│   │   ├── routes
+│   │   │   ├── todoRoutes.ts
+│   │   │   └── userRoutes.ts
+│   │   ├── server.ts
+│   │   ├── types
+│   │   │   └── custom.ts
+│   │   └── utils
+│   └── tsconfig.json
+├── python_app
+│   ├── .DS_Store
+│   ├── .coverage
+│   ├── .env
+│   ├── Dockerfile
+│   ├── app.py
+│   ├── coverage.xml
+│   ├── extensions.py
+│   ├── models.py
+│   ├── requirements.txt
+│   ├── routes
+│   │   ├── auth_routes.py
+│   │   └── todo_routes.py
+│   └── tests
+│       ├── .DS_Store
+│       ├── conftest.py
+│       ├── test_auth.py
+│       └── test_todos.py
+├── sonar-project.properties
+├── test-results
+└── test.sh

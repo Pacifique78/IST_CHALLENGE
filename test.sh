@@ -30,10 +30,10 @@ sonar-scanner \
   -Dsonar.python.coverage.reportPaths=python_app/coverage.xml \
   -Dsonar.login=$SONAR_TOKEN \
   -Dsonar.exclusions=**/*.java,**/*.ts,**/*.js,**/*.jsx,**/*.tsx \
-  -Dsonar.sources=python_app,python_app/routes \
+  -Dsonar.sources=python_app/routes,python_app/app.py,python_app/extensions.py,python_app/models.py \
   -Dsonar.tests=python_app/tests \
-  -Dsonar.test.inclusions=**/*test*.py,**/conftest.py \
-  -Dsonar.test.exclusions=**/__pycache__/** \
+  -Dsonar.inclusions=**/*.py \
+  -Dsonar.test.inclusions=**/test_*.py,**/conftest.py \
   -Dsonar.python.version=3 \
   -Dsonar.sourceEncoding=UTF-8
 

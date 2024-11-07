@@ -28,10 +28,12 @@ sonar-scanner \
   -Dsonar.host.url=https://test.ist-challenge.i-skip.com \
   -Dsonar.projectKey=ist-challenge \
   -Dsonar.python.coverage.reportPaths=python_app/coverage.xml \
-  -Dsonar.javascript.lcov.reportPaths=node_app/coverage/lcov.info \
   -Dsonar.login=$SONAR_TOKEN \
-  -Dsonar.exclusions=**/*.java,**/*.ts \
-  -Dsonar.sources=python_app/ \
-  -Dsonar.tests=python_app/tests/
+  -Dsonar.exclusions=**/*.java,**/*.ts,**/*.js,**/*.jsx,**/*.tsx \
+  -Dsonar.sources=python_app/app.py,python_app/extensions.py,python_app/models.py,python_app/routes/**/*.py \
+  -Dsonar.tests=python_app/tests/**/*.py \
+  -Dsonar.test.inclusions=**/*test*.py,**/conftest.py \
+  -Dsonar.python.version=3 \
+  -Dsonar.sourceEncoding=UTF-8
 
 echo "All tests completed!"

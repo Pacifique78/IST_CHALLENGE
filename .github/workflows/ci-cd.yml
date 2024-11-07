@@ -150,6 +150,12 @@ jobs:
         script: |
           cd ${{ env.PROJECT_PATH }}
           echo "DOCKERHUB_USERNAME=${{ env.DOCKERHUB_USERNAME }}" > .env
+          docker rm -f ist_challenge_2024-node_api-1
+          docker rm -f ist_challenge_2024-java_api-1
+          docker rm -f ist_challenge_2024-python_api-1
+          docker rmi ${{ env.DOCKERHUB_USERNAME }}/node-api:latest
+          docker rmi ${{ env.DOCKERHUB_USERNAME }}/java-api:latest
+          docker rmi ${{ env.DOCKERHUB_USERNAME }}/python-api:latest
           docker-compose -f docker-compose.prod.yml pull
           docker-compose -f docker-compose.prod.yml up -d
           docker system prune -f

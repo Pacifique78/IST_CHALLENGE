@@ -16,7 +16,7 @@ env:
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   # Database configuration
   POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  POSTGRES_PASSWORD: password  # Using a simple password for tests
 
 jobs:
   test:
@@ -28,22 +28,22 @@ jobs:
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections during tests
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --health-start-period 20s
 
     steps:
     - uses: actions/checkout@v3
 
-    # Set up Docker Buildx
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # Install Docker Compose
     - name: Install Docker Compose
       run: |
         DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
@@ -51,16 +51,27 @@ jobs:
         curl -SL https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
         chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 
-    - name: Initialize Databases
-      env:
-        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
-        PGUSER: ${{ env.POSTGRES_USER }}
+    - name: Verify Postgres Connection
       run: |
-        # Wait for PostgreSQL to be ready
-        sleep 5
+        # Wait for PostgreSQL to be really ready
+        for i in {1..30}; do
+          if PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -c '\l' >/dev/null 2>&1; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Waiting for PostgreSQL to start... ($i/30)"
+          sleep 1
+        done
+
+    - name: Initialize Databases
+      run: |
+        # Show PostgreSQL logs if available
+        docker ps -a
+        echo "PostgreSQL Logs:"
+        docker logs $(docker ps -aqf "name=postgres")
         
-        # Run init.sql to create and initialize all databases
-        psql -h localhost -f init-db/init.sql
+        # Initialize databases
+        PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -f init-db/init.sql
 
     - name: Run Tests
       run: |

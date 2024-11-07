@@ -10,7 +10,7 @@ const config: Config.InitialOptions = {
   },
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/jest.setup.ts'],
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -18,7 +18,14 @@ const config: Config.InitialOptions = {
     '!src/__tests__/**',
     '!src/migrations/**'
   ],
-  coverageDirectory: 'coverage'
-}
+  coverageDirectory: 'coverage',
+  coverageReporters: ['lcov', 'text'],
+  moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/src/$1',
+  },
+  testSequencer: '<rootDir>/src/__tests__/customSequencer.js',
+  forceExit: true,
+  detectOpenHandles: true,
+};
 
 export default config;

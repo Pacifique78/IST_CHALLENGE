@@ -80,6 +80,7 @@ jobs:
         docker compose -f docker-compose.yml run --rm \
           -e POSTGRES_HOST=postgres \
           -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
+          -e POSTGRES_PORT=${{ env.POSTGRES_PORT }} \
           -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
           -e DATABASE_URL=postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@postgres:5432/python_tododb_test \
           -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/java_tododb_test \

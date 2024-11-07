@@ -1,44 +1,26 @@
 package com.todo.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.todo.TodoApplication;
-import com.todo.config.TestConfig;
-import com.todo.config.TestSecurityConfig;
-import com.todo.dto.LoginRequest;
-import com.todo.dto.SignupRequest;
-import com.todo.exception.ConflictException;
-import com.todo.exception.UnauthorizedException;
-import com.todo.model.User;
-import com.todo.service.UserService;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.UUID;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = {
-    TodoApplication.class,  // Your main application class
-    TestSecurityConfig.class  // Test security configuration
-})
-@AutoConfigureMockMvc
-class AuthControllerTest {
+import java.util.UUID;
 
-    @Autowired
-    private MockMvc mockMvc;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+import com.todo.BaseIntegrationTest;
+import com.todo.dto.LoginRequest;
+import com.todo.dto.SignupRequest;
+import com.todo.exception.ConflictException;
+import com.todo.exception.UnauthorizedException;
+import com.todo.model.User;
+import com.todo.service.UserService;
+
+class AuthControllerTest extends BaseIntegrationTest {
 
     @MockBean
     private UserService userService;

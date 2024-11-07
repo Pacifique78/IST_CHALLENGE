@@ -1,45 +1,57 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+# IST Challenge - Multi-Service API Quality Assurance Tool
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+This project is a quality assurance tool for a software product with a microservice architecture, utilizing Docker containers for API services. The APIs are written in Python, Node.js, and Java, each performing different real-world actions and connected to a shared PostgreSQL database. The solution is deployed using Docker and Bitbucket pipelines, with integrated static code analysis via SonarQube to ensure code quality and enforce a minimum test coverage threshold.
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+## Project URLs
 
----
+- **Python API**: [https://python.ist-challenge.i-skip.com/](https://python.ist-challenge.i-skip.com/)
+- **Java API**: [https://java.ist-challenge.i-skip.com/](https://java.ist-challenge.i-skip.com/)
+- **Node.js API**: [https://node.ist-challenge.i-skip.com/](https://node.ist-challenge.i-skip.com/)
+- **SonarQube Dashboard**: [https://test.ist-challenge.i-skip.com/](https://test.ist-challenge.i-skip.com/)
 
-## Edit a file
+## Table of Contents
+1. [Services Overview](#services-overview)
+2. [Getting Started](#getting-started)
+3. [Deployment](#deployment)
+4. [Static Code Analysis](#static-code-analysis)
+5. [Conclusion](#conclusion)
 
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
 
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
+## Services Overview
 
----
+1. **Python API** (`python_app/`): Provides 3 REST APIs built using Flask/Django, performing various actions.
+2. **Node.js API** (`node_app/`): Contains 3 REST APIs built with Node.js and TypeScript.
+3. **Java API** (`java_app/`): Implements 3 REST APIs using Java Spring Boot.
+4. **Postgres Database** (`postgres/`): Stores data shared among the APIs.
+5. **Tester Service** (`tester/`): Responsible for testing all APIs, written in your preferred language.
 
-## Create a file
+## Getting Started
 
-Next, you’ll add a new file to this repository.
+To run the project locally:
 
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
+1. **Clone the Repository**:
+   ```bash
+   git clone https://bitbucket.org/your-repo-url
+   cd IST_CHALLENGE
+2. Environment Variables: Ensure environment variables for each service are set in a .env file or directly in the Docker Compose files.
 
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
+3. Build and Start Services:
+    ```bash
+    docker-compose up --build
+    This command starts the services defined in the docker-compose.yml file, including the database, APIs, and tester service.
 
----
+## Deployment
+This project is configured for continuous integration and deployment using Bitbucket Pipelines:
+1. Automatic Deployment: Pushing changes to the main branch triggers the pipeline.
+2. Quality Check: The pipeline uses SonarQube to analyze code quality and test coverage. If test coverage falls below 80% or tests fail, deployment halts, and errors are logged.
+3. Production Deployment:
+    ```bash
+    docker-compose -f docker-compose.prod.yml up --build -d
+    This command deploys services in production mode.
 
-## Clone a repository
+## Static Code Analysis
+The project uses SonarQube for static code analysis. SonarQube is configured to analyze code quality metrics like code smells, duplication, and maintainability. You can access the SonarQube dashboard to view real-time analysis at: [https://test.ist-challenge.i-skip.com/](SonarQube Dashboard)
 
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
+## Conclusion
+This project demonstrates a quality assurance tool leveraging Docker and multi-language APIs to create a robust microservice architecture. Each component is tested and monitored through SonarQube, ensuring reliable deployment standards.
 
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
-
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).

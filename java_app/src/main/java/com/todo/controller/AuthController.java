@@ -19,6 +19,13 @@ import java.util.Map;
 public class AuthController {
     private final UserService userService;
 
+    @GetMapping
+    public ResponseEntity<?> checkHealthEntity() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "healthy");
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest request) {
         User user = userService.signup(request);

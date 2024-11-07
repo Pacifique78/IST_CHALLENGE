@@ -1,31 +1,5 @@
 package com.todo.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.todo.TodoApplication;
-import com.todo.config.TestConfig;
-import com.todo.config.TestSecurityConfig;
-import com.todo.dto.TodoRequest;
-import com.todo.dto.TodoResponse;
-import com.todo.exception.NotFoundException;
-import com.todo.model.User;
-import com.todo.service.TodoService;
-import com.todo.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.UUID;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,18 +9,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = {
-    TodoApplication.class,  // Your main application class
-    TestSecurityConfig.class  // Test security configuration
-})
-@AutoConfigureMockMvc
-class TodoControllerTest {
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.UUID;
 
-    @Autowired
-    private MockMvc mockMvc;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+import com.todo.BaseIntegrationTest;
+import com.todo.dto.TodoRequest;
+import com.todo.dto.TodoResponse;
+import com.todo.exception.NotFoundException;
+import com.todo.model.User;
+import com.todo.service.TodoService;
+import com.todo.service.UserService;
+
+class TodoControllerTest extends BaseIntegrationTest {
 
     @MockBean
     private TodoService todoService;

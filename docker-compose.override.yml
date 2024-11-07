@@ -16,6 +16,9 @@ services:
       - FLASK_DEBUG=1
     volumes:
       - ./python_app:/app
+  test:
+    profiles:
+      - test
 
   db:
     ports:

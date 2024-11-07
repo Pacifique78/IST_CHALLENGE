@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from extensions import db, bcrypt, jwt
 from datetime import timedelta, datetime
+from flasgger import Swagger
 import os
 import logging
 
@@ -21,20 +22,68 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
+    # Swagger Configuration
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec',
+                "route": '/apispec.json',
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "swagger_ui": True,
+        "specs_route": "/docs"
+    }
+
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Todo API",
+            "description": "API for Todo Application",
+            "contact": {
+                "email": "your-email@example.com"
+            },
+            "version": "1.0"
+        },
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+            }
+        },
+        "security": [
+            {
+                "Bearer": []
+            }
+        ]
+    }
+
     logger.info("Initializing extensions...")
-    # Initialize extensions with app
+    # Initialize extensions
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    Swagger(app, config=swagger_config, template=swagger_template)
 
     @app.before_request
     def log_request_info():
-        logger.debug('Headers: %s', request.headers)
-        logger.debug('Body: %s', request.get_data())
+        # Skip logging for static files
+        if not request.path.startswith('/flasgger_static'):
+            logger.debug('Headers: %s', request.headers)
+            logger.debug('Body: %s', request.get_data())
 
     @app.after_request
     def log_response_info(response):
-        logger.debug('Response: %s', response.data)
+        # Skip logging for static files
+        if not request.path.startswith('/flasgger_static'):
+            # Only log JSON responses
+            if response.content_type == 'application/json':
+                logger.debug('Response: %s', response.data)
         return response
 
     @app.route('/health')

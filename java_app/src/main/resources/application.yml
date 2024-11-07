@@ -1,3 +1,5 @@
+# File: java_app/src/main/resources/application.yml
+
 server:
   port: 5003
 
@@ -24,6 +26,25 @@ jwt:
   secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
   expiration: 3600000 # 1 hour in milliseconds
 
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    filter: true
+    displayRequestDuration: true
+    syntaxHighlight:
+      activated: true
+  packages-to-scan: com.todo.controller
+  paths-to-match: /api/**
+  show-actuator: false
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+
 logging:
   level:
     org.springframework.web: INFO
@@ -40,6 +61,12 @@ spring:
     properties:
       hibernate:
         format_sql: false
+
+springdoc:
+  api-docs:
+    enabled: true # You might want to disable this in prod
+  swagger-ui:
+    enabled: false # Typically disabled in production
 
 logging:
   level:

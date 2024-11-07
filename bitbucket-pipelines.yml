@@ -1,0 +1,103 @@
+image: docker:24.0.7-dind
+
+options:
+  docker: true
+
+definitions:
+  services:
+    docker:
+      memory: 2048
+  caches:
+    sonar: ~/.sonar
+    maven: ~/.m2
+
+pipelines:
+  pull-requests:    
+    '**':
+      - step:
+          name: Build and Test PR
+          services:
+            - docker
+          caches:
+            - docker
+          script:
+            # Disable BuildKit
+            - export DOCKER_BUILDKIT=0
+            - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Docker commands
+            - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            - docker compose build
+            # Start DB and wait for it to be ready
+            - docker compose up -d db
+            - sleep 15
+            # Verify database initialization
+            - docker compose exec db psql -U postgres -c "\l"
+            # Run tests
+            - docker compose run test || { docker compose logs db; exit 1; }
+            # Cleanup
+            - docker compose down
+      - step:
+          name: SonarQube analysis
+          image: maven:3.8.7-eclipse-temurin-11
+          caches:
+            - maven
+            - sonar
+          script:
+            # Install required tools
+            - apt-get update
+            - apt-get install -y unzip
+            # Download and setup sonar-scanner
+            - curl -Lo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$PWD/sonar-scanner-4.7.0.2747-linux/bin
+            # Debug environment variables
+            - echo "SONAR_URL is set to:"
+            - echo "${SONAR_URL}"
+            # Create sonar-project.properties
+            - |
+              echo "sonar.projectKey=ist-challenge
+              sonar.projectName=ist-challenge
+              sonar.projectVersion=1.0
+              sonar.sources=.
+              sonar.host.url=https://test.ist-challenge.i-skip.com/
+              sonar.login=${SONAR_TOKEN}
+              sonar.sourceEncoding=UTF-8" > sonar-project.properties
+            # Run SonarQube scan
+            - cat sonar-project.properties
+            - sonar-scanner
+
+  branches:
+    main:
+      - step:
+          name: Build, Test and Deploy
+          services:
+            - docker
+          caches:
+            - docker
+          script:
+            # Disable BuildKit
+            - export DOCKER_BUILDKIT=0
+            - export COMPOSE_DOCKER_CLI_BUILD=0
+            # Docker commands
+            - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            - docker compose build
+            # Start DB and wait for it to be ready
+            - docker compose up -d db
+            - sleep 15
+            # Verify database initialization
+            - docker compose exec db psql -U postgres -c "\l"
+            # Run tests
+            - docker compose run test || { docker compose logs db; exit 1; }
+            
+            - pipe: atlassian/ssh-run:0.4.1
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SERVER_IP
+                PORT: $SSH_PORT
+                MODE: non-interactive
+                COMMAND: |
+                  cd ${PROJECT_PATH}
+                  git pull origin main
+                  docker compose down
+                  docker compose up -d --build
+                  docker image prune -f

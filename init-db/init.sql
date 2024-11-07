@@ -9,7 +9,6 @@ CREATE DATABASE node_tododb;
 CREATE DATABASE node_tododb_test;
 CREATE DATABASE java_tododb;
 CREATE DATABASE java_tododb_test;
-CREATE DATABASE sonar;
 
 -- Set up extensions for each database
 \c python_tododb
@@ -28,7 +27,4 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 \c java_tododb_test
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-\c sonar
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

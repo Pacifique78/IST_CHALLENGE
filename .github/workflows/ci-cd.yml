@@ -1,0 +1,154 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  # Database configuration
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: password  # Using a simple password for tests
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections during tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 20s
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Install Docker Compose
+      run: |
+        DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+        mkdir -p $DOCKER_CONFIG/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+        chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
+    - name: Verify Postgres Connection
+      run: |
+        # Wait for PostgreSQL to be really ready
+        for i in {1..30}; do
+          if PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -c '\l' >/dev/null 2>&1; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Waiting for PostgreSQL to start... ($i/30)"
+          sleep 1
+        done
+
+    - name: Initialize Databases
+      run: |
+        # Show PostgreSQL logs if available
+        docker ps -a
+        echo "PostgreSQL Logs:"
+        docker logs $(docker ps -aqf "name=postgres")
+        
+        # Initialize databases
+        PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -f init-db/init.sql
+
+    - name: Run Tests
+      run: |
+        docker compose -f docker-compose.yml build test
+        docker compose -f docker-compose.yml run --rm \
+          -e POSTGRES_HOST=postgres \
+          -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
+          -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+          -e DATABASE_URL=postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@postgres:5432/python_tododb_test \
+          -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/java_tododb_test \
+          -e SPRING_DATASOURCE_USERNAME=${{ env.POSTGRES_USER }} \
+          -e SPRING_DATASOURCE_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+          -e POSTGRES_DB=node_tododb_test \
+          test
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ env.DOCKERHUB_USERNAME }}
+        password: ${{ env.DOCKER_PASSWORD }}
+
+    - name: Build and push Python API
+      uses: docker/build-push-action@v4
+      with:
+        context: ./python_app
+        push: true
+        tags: ${{ env.DOCKERHUB_USERNAME }}/python-api:latest
+
+    - name: Build and push Node API
+      uses: docker/build-push-action@v4
+      with:
+        context: ./node_app
+        file: ./node_app/Dockerfile.prod
+        push: true
+        tags: ${{ env.DOCKERHUB_USERNAME }}/node-api:latest
+
+    - name: Build and push Java API
+      uses: docker/build-push-action@v4
+      with:
+        context: ./java_app
+        push: true
+        tags: ${{ env.DOCKERHUB_USERNAME }}/java-api:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Copy docker-compose and init files to VPS
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ env.SSH_HOST }}
+        username: ${{ env.SSH_USER }}
+        key: ${{ env.SSH_PRIVATE_KEY }}
+        source: "docker-compose.prod.yml,init-db/"
+        target: "/opt/todo-app"
+
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ env.SSH_HOST }}
+        username: ${{ env.SSH_USER }}
+        key: ${{ env.SSH_PRIVATE_KEY }}
+        script: |
+          cd /opt/todo-app
+          echo "DOCKERHUB_USERNAME=${{ env.DOCKERHUB_USERNAME }}" > .env
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d
+          docker system prune -f

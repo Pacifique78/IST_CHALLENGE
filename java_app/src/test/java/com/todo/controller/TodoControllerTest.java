@@ -1,6 +1,8 @@
 package com.todo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.todo.TodoApplication;
+import com.todo.config.TestConfig;
 import com.todo.config.TestSecurityConfig;
 import com.todo.dto.TodoRequest;
 import com.todo.dto.TodoResponse;
@@ -33,9 +35,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(classes = {
+    TodoApplication.class,  // Your main application class
+    TestSecurityConfig.class  // Test security configuration
+})
 @AutoConfigureMockMvc
-@Import(TestSecurityConfig.class)
 class TodoControllerTest {
 
     @Autowired

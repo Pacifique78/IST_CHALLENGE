@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # Required for SonarQube analysis
+        fetch-depth: 0
 
     - name: Set up JDK 17
       uses: actions/setup-java@v3
@@ -28,6 +28,11 @@ jobs:
         ./mvnw clean package -DskipTests
         cd ..
 
+    - name: Get Maven dependencies path
+      id: get-maven-path
+      run: |
+        echo "MAVEN_PATH=$(cd java_app && ./mvnw help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)" >> $GITHUB_ENV
+
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
@@ -39,7 +44,6 @@ jobs:
         docker compose build
         docker compose up -d db
         sleep 15
-        # Verify database initialization
         docker compose exec -T db psql -U postgres -c "\l"
         docker compose run test
         docker compose down
@@ -50,14 +54,28 @@ jobs:
         sonar.projectName=ist-challenge
         sonar.projectVersion=1.0
         sonar.sources=.
+        sonar.java.source=17
         sonar.java.binaries=java_app/target/classes
         sonar.java.test.binaries=java_app/target/test-classes
-        sonar.java.libraries=~/.m2/repository/**/*.jar
+        sonar.java.libraries=${{ env.MAVEN_PATH }}/**/*.jar
         sonar.coverage.exclusions=**/*.java
-        sonar.exclusions=**/target/**,**/node_modules/**
+        sonar.exclusions=**/target/**,**/node_modules/**,**/.git/**,**/.github/**
         sonar.host.url=https://test.ist-challenge.i-skip.com
         sonar.login=${{ secrets.SONAR_TOKEN }}
-        sonar.sourceEncoding=UTF-8" > sonar-project.properties
+        sonar.sourceEncoding=UTF-8
+        sonar.java.source.folder=java_app/src/main/java
+        sonar.java.test.folder=java_app/src/test/java" > sonar-project.properties
+
+    - name: Debug SonarQube config
+      run: |
+        echo "Content of sonar-project.properties:"
+        cat sonar-project.properties
+        echo "Maven repository location:"
+        echo ${{ env.MAVEN_PATH }}
+        echo "Java binaries location:"
+        ls -la java_app/target/classes
+        echo "Maven dependencies:"
+        ls -la ${{ env.MAVEN_PATH }}
 
     - name: SonarQube Scan
       uses: sonarsource/sonarqube-scan-action@master

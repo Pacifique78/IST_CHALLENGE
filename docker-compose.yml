@@ -52,6 +52,7 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
+      - API_URL=https://node.ist-challenge.i-skip.com/
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=node_tododb
       - NODE_ENV=development

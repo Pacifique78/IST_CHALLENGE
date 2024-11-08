@@ -1,3 +1,5 @@
+// File: java_app/src/main/java/com/todo/config/SecurityConfig.java
+
 package com.todo.config;
 
 import lombok.RequiredArgsConstructor;
@@ -23,11 +25,14 @@ public class SecurityConfig {
         http.csrf().disable()
                 .authorizeRequests()
                 .antMatchers(
-                    "/api/signup", 
-                    "/api/login",
-                    "/v3/api-docs/**",
+                    "/",
+                    "/swagger-ui.html",
                     "/swagger-ui/**",
-                    "/swagger-ui.html"
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**",
+                    "/api/signup",
+                    "/api/login"
                 ).permitAll()
                 .anyRequest().authenticated()
                 .and()

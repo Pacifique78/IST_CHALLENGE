@@ -33,17 +33,18 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
-    filter: true
-    displayRequestDuration: true
-    syntaxHighlight:
-      activated: true
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: Todo API
+    disable-swagger-default-url: true
+    default-model-expand-depth: 1
+    default-models-expand-depth: 1
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
   packages-to-scan: com.todo.controller
   paths-to-match: /api/**
-  show-actuator: false
-  default-produces-media-type: application/json
-  default-consumes-media-type: application/json
 
 logging:
   level:

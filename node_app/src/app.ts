@@ -3,13 +3,16 @@ import dotenv from 'dotenv';
 import errorHandler from './middlewares/errorHandler';
 import userRoutes from './routes/userRoutes';
 import todoRoutes from './routes/todoRoutes';
+import { swaggerRouter } from './config/swagger';
 
 dotenv.config();
 
 const app: Express = express();
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
+app.use('/', swaggerRouter);
+
+app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ message: 'API is running' });
 });
 

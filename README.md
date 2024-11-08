@@ -1,6 +1,8 @@
 # IST Challenge - Multi-Service API Quality Assurance Tool
 
-This project is a quality assurance tool for a software product with a microservice architecture, utilizing Docker containers for API services. The APIs are written in Python, Node.js, and Java, each performing different real-world actions and connected to a shared PostgreSQL database. The solution is deployed using Docker and Bitbucket pipelines, with integrated static code analysis via SonarQube to ensure code quality and enforce a minimum test coverage threshold.
+This project is a quality assurance tool for a software product built on a microservice architecture, utilizing Docker containers to manage API services. The system includes three APIs—written in Python, Java, and Node.js—each performing distinct real-world actions and connected to a shared PostgreSQL database. Docker is used to containerize these services, enabling consistent builds and deployments.
+
+For deployment, Github pipelines automate CI/CD processes, incorporating SonarQube for static code analysis to maintain high code quality and enforce minimum test coverage standards. During each deployment, the services and database are built, pushed to DockerHub, and pulled to the VPS via SSH. The latest images are then used to rebuild the containers, ensuring that the most recent versions of each service are running, resulting in a streamlined and reliable deployment flow.
 
 ## Project URLs
 

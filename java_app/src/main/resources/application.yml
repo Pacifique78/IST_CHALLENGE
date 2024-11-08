@@ -5,7 +5,7 @@ server:
 
 spring:
   profiles:
-    active: dev  # Change to 'prod' in production
+    active: prod  # Change to 'prod' in production
   application:
     name: todo-api
   datasource:
@@ -61,12 +61,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-
-springdoc:
-  api-docs:
-    enabled: true # You might want to disable this in prod
-  swagger-ui:
-    enabled: false # Typically disabled in production
 
 logging:
   level:

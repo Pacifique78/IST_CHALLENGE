@@ -46,8 +46,8 @@ public class OpenApiConfig {
                     .name("Apache 2.0")
                     .url("http://springdoc.org"))
                 .contact(new Contact()
-                    .name("Your Name")
-                    .email("your.email@example.com")))
+                    .name("Pacifique")
+                    .email("tuyipaccy78@gmail.com")))
             .addSecurityItem(new SecurityRequirement()
                 .addList(securitySchemeName))
             .components(new Components()
@@ -64,7 +64,7 @@ public class OpenApiConfig {
         if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
             return List.of(
                 new Server()
-                    .url("https://api.yourdomain.com")
+                    .url("https://java.ist-challenge.i-skip.com")
                     .description("Production Server")
             );
         } else {

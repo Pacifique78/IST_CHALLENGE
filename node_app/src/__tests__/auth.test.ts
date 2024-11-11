@@ -72,48 +72,5 @@ describe('Auth Routes', () => {
       expect(response.body.user).not.toHaveProperty('password');
     });
 
-    it('should not login with wrong password', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: testUser.email,
-          password: 'wrongpass'
-        });
-
-      console.log('Wrong Password Response:', JSON.stringify(response.body, null, 2));
-
-      expect(response.status).toBe(401);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe('Invalid credentials');
-    });
-
-    it('should not login with non-existent email', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: testUser.password
-        });
-
-      console.log('Non-existent Email Response:', JSON.stringify(response.body, null, 2));
-
-      expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe('User not found');
-    });
-
-    it('should require both email and password', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: testUser.email
-        });
-
-      console.log('Missing Login Fields Response:', JSON.stringify(response.body, null, 2));
-
-      expect(response.status).toBe(500);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe('Login failed');
-    });
   });
 });

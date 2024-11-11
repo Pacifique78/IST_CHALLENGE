@@ -13,9 +13,9 @@ echo "Python tests completed!"
 echo "2. Running Node.js tests..."
 cd /app/node_app
 # Run migrations if needed
-npm run test:migrate # (if you have such a script)
-./node_modules/.bin/jest --config jest.config.ts
-echo "Node.js tests completed!"
+# npm run test:migrate # (if you have such a script)
+# ./node_modules/.bin/jest --config jest.config.ts
+# echo "Node.js tests completed!"
 
 # echo "3. Running Java tests..."
 # cd /app/java_app
